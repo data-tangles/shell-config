@@ -24,14 +24,14 @@ git clone https://github.com/data-tangles/shell-config.git
 
 ### Linux
 
-1. Navigate to the `linux` folder within cloned repository
+1. Navigate to the `linux` folder within the cloned repository
 
 ```
 cd ./shell-config/linux/
 ```
 
-2. Run the `install.sh
+2. Run `setup.sh
 
 ```
-./install.sh
+./setup.sh
 ```
