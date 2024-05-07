@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+set -eo pipefail
+
+# Global Variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+readonly SCRIPT_DIR
+NERD_FONTS_VERSION="3.2.1"
 
 # Initialize status variables for each installation option
 gogh_status="Install Gogh [ ]"
@@ -29,7 +35,7 @@ install_nerd_fonts() {
     fi
     for font in "${fonts[@]}"; do
         zip_file="${font}.zip"
-        download_url="https://github.com/ryanoasis/nerd-fonts/releases/download/latest/${zip_file}"
+        download_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v${NERD_FONTS_VERSION}/${zip_file}"
         echo "Downloading $download_url"
         wget "$download_url"
         unzip "$zip_file" -d "$fonts_dir"
@@ -50,7 +56,7 @@ install_starship() {
     curl -sS https://starship.rs/install.sh | sh
     echo 'eval "$(starship init bash)"' >> ~/.bashrc
     echo "Replace starship.toml file..." 
-    cp -f ./linux/starship/starship.toml ~/.config/
+    cp -f "$SCRIPT_DIR/starship/starship.toml" ~/.config/
     if [[ $? -eq 0 ]]; then
         starship_status="Install Starship [✔]"
     else
@@ -61,20 +67,39 @@ install_starship() {
 # Function to install ble.sh
 install_ble_sh() {
     echo "Installing ble.sh prerequisites and running make..."
-    sudo apt install gawk
+    sudo apt install make gawk
     git clone --recursive https://github.com/akinomyoga/ble.sh.git
     cd ble.sh || exit
-    make
     echo "Installing ble.sh..."
     make install
-    echo "Adding ble.sh config to .bashrc..."
-    sed -i "1i [[ \$- == *i* ]] && source ~/.local/share/blesh/ble.sh --noattach" ~/.bashrc
-    echo "[[ ${BLE_VERSION-} ]] && ble-attach" >> ~/.bashrc
+    if grep -Fxq "[[ $- == *i* ]] && source ~/.local/share/blesh/ble.sh --noattach" ~/.bashrc; then 
+      echo "Entry is present, skipping ~/.bashrc modification..."
+    else   
+      echo "Adding ble.sh source config to .bashrc..."
+      sed -i "1i [[ \$- == *i* ]] && source ~/.local/share/blesh/ble.sh --noattach" ~/.bashrc
+      echo "[[ \${BLE_VERSION-} ]] && ble-attach" >> ~/.bashrc
+    fi
+    if grep -Fxq "[[ ${BLE_VERSION-} ]] && ble-attach" ~/.bashrc; then
+      echo "Entry is present, skipping ~/.bashrc modification..."
+    else 
+      echo "Adding ble.sh attach config to .bashrc..."
+      echo "[[ \${BLE_VERSION-} ]] && ble-attach" >> ~/.bashrc  
+    fi    
     if [[ $? -eq 0 ]]; then
         ble_sh_status="Install ble.sh [✔]"
+        rm -rf ble.sh
     else
         ble_sh_status="Install ble.sh [✘]"
+        rm -rf ble.sh
     fi
+}
+
+#Function to install all 
+install_all() {
+  install_gogh
+  install_nerd_fonts
+  install_starship
+  install_ble_sh
 }
 
 # Main function to display the menu
