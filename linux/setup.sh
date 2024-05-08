@@ -54,7 +54,12 @@ install_nerd_fonts() {
 install_starship() {
     echo "Installing Starship..."
     curl -sS https://starship.rs/install.sh | sh
-    echo 'eval "$(starship init bash)"' >> ~/.bashrc
+    if grep -Fxq "eval \"$(starship init bash)\"" ~/.bashrc; then 
+      echo "Entry is present, skipping ~/.bashrc modification..."
+    else   
+      echo "Adding starship config to .bashrc..."
+      echo 'eval "$(starship init bash)"' >> ~/.bashrc
+    fi
     echo "Replace starship.toml file..." 
     cp -f "$SCRIPT_DIR/starship/starship.toml" ~/.config/
     if [[ $? -eq 0 ]]; then
